@@ -20,23 +20,6 @@ for dir in exam_dir:
         cnt += 1
 
 
-
-
-# Get output path from img path
-# split = all_image_paths[1].split('/')
-# print(f"{split[0]}/{split[1]}/{split[2]}/{split[2]}.json")
-
-# Edit a file to append new fields to question
-# py_dict["questions"][0]["difficulty"] = "easy"
-# f.seek(0)
-# f.truncate(0)
-
-# json_string = json.dumps(py_dict)
-# f.write(json_string)
-
-
-
-
 client = genai.Client(api_key=key)
 
 # System instructions and formatting rules
