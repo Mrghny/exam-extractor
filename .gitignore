@@ -1,0 +1,8 @@
+.env
+*.pdf
+errors/
+exams/
+garbage/
+mark_schemes/
+output/
+venv/
