@@ -8,3 +8,4 @@ output/
 venv/
 tempCodeRunnerFile.py
 test.py
+*.txt
