@@ -5,6 +5,11 @@ from PIL import Image
 import dotenv
 
 dotenv.load_dotenv()
+
+TOPICS = os.getenv("TOPICS").split(',')
+subtopics = []
+TOPICS = [t.replace('_', ' ') for t in TOPICS]   
+
 key = os.getenv("API_KEY")
 
 exam_dir = os.listdir("./output")
@@ -38,6 +43,9 @@ instructions = [
     # - easy: 1-3 marks, straightforward application
     # - medium: 4-6 marks, requires multiple steps
     # - hard: 7+ marks, requires deep understanding
+    """,
+    f"""
+    Pick from these topics only: {TOPICS}. and pick from the provided subtopics and if the subtopics do not have a match create a new subtopic. Subtopics: {subtopics}
     """
 ]
 
@@ -68,21 +76,32 @@ if len(current_batch) > len(instructions):
 
 # --- Processing Batches ---
 batch_number = 0
+max_attempts = 5
+attempts = 0
 for batch in content_batch:
     # Rate limiting: sleep every 5 batches (except the first)
     if batch_number % 5 == 0 and batch_number != 0:
         time.sleep(120)
 
-    # Generate content
-    # No need to manually wrap images in types.Part
-    response = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=batch, 
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
+    # If API servers are overloaded continue to send reuqests upto 5 times
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=batch, 
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+            )
         )
-    )
-    
+    except Exception as e:
+        if "503" in e:
+            if attempts < max_attempts:
+                time.sleep(2 ** attempts)
+                continue
+            else:
+                raise
+        else:
+            raise
+
     batch_number += 1
 
     try:
@@ -118,6 +137,7 @@ for batch in content_batch:
                         file_data["questions"][question_number-1]["difficulty"] = data.get("difficulty")
                         file_data["questions"][question_number-1]["topic"] = data.get("topic")
                         file_data["questions"][question_number-1]["subtopic"] = data.get("subtopic")
+                        subtopics.append(data.get("subtopic"))
 
                         f.seek(0)
                         f.truncate()
